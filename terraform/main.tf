@@ -9,9 +9,9 @@ resource "null_resource" "provision_self_hosted_server" {
 
     connection {
       type        = "ssh"
-      host        = "120.452.215.11"
+      host        = "103.174.226.90"
       user        = "root"   # You can replace 'root' with your server's username
-      password    = "randompassword"
+      password    = "8JL6HzP*KIvf"
       port        = 22
       timeout     = "2m"
     }
