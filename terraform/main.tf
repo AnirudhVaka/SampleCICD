@@ -6,7 +6,7 @@ locals {
 # Conditionally create the S3 bucket
 resource "aws_s3_bucket" "website_bucket" {
   count  = local.create_bucket ? 1 : 0
-  bucket = "samplewebvaultbucket"
+  bucket = "samplewebsitebucket"
 
   website {
     index_document = "index.html"
