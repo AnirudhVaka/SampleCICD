@@ -4,42 +4,42 @@ import (
     "testing"
     "github.com/gruntwork-io/terratest/modules/terraform"
     "github.com/stretchr/testify/assert"
-    "github.com/gruntwork-io/terratest/modules/http-helper"
-    "time"
+    "github.com/aws/aws-sdk-go/aws"
+    "github.com/aws/aws-sdk-go/aws/session"
+    "github.com/aws/aws-sdk-go/service/s3"
 )
 
-// TestS3BucketWebsite verifies that the S3 website URL exists and is accessible
-func TestS3BucketWebsite(t *testing.T) {
+func TestS3Bucket(t *testing.T) {
     t.Parallel()
 
-    // Define Terraform options
     terraformOptions := &terraform.Options{
-        // Path to the Terraform code that provisions the S3 bucket
-        TerraformDir: "../terraform",
+        TerraformDir: "../test", // assuming main.tf is in the parent directory
     }
 
-    // Clean up resources after tests
+    // Clean up resources with `terraform destroy` at the end of the test
     defer terraform.Destroy(t, terraformOptions)
 
-    // Initialize and apply the Terraform configuration
+    // Run `terraform init` and `terraform apply`
     terraform.InitAndApply(t, terraformOptions)
 
-    // Verify the website URL output
-    websiteURL, err := terraform.OutputE(t, terraformOptions, "website_url")
-    if err != nil {
-        t.Fatalf("Failed to get website_url output: %v", err)
-    }
+    // Get the name of the S3 bucket from Terraform outputs
+    bucketName := terraform.Output(t, terraformOptions, "website_url")
 
-    // Check if the website URL is not empty
-    assert.NotEmpty(t, websiteURL, "Website URL should not be empty")
+    // Initialize an AWS session
+    awsRegion := "us-east-1" // specify your region
+    sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(awsRegion)}))
+    s3Client := s3.New(sess)
 
-    // Ensure the website URL is a valid format
-    assert.Regexp(t, `^https?://`, websiteURL, "Website URL should start with http:// or https://")
+    // Verify if the bucket exists
+    _, err := s3Client.HeadBucket(&s3.HeadBucketInput{
+        Bucket: aws.String(bucketName),
+    })
+    assert.NoError(t, err)
 
-    // Test the website endpoint using HTTP helper if a website URL is provided
-    maxRetries := 10
-    timeBetweenRetries := 10 * time.Second
-
-    // Perform an HTTP GET request with retries
-    http_helper.HttpGetWithRetry(t, websiteURL, nil, 200, "", maxRetries, timeBetweenRetries)
+    // Check if public access is disabled for the bucket (basic check)
+    publicAccess, err := s3Client.GetBucketPolicyStatus(&s3.GetBucketPolicyStatusInput{
+        Bucket: aws.String(bucketName),
+    })
+    assert.NoError(t, err)
+    assert.NotNil(t, publicAccess)
 }

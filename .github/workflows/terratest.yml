@@ -14,47 +14,31 @@ jobs:
     environment: AWS
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+        - name: Checkout code
+          uses: actions/checkout@v2
+    
+        - name: Set up Go
+          uses: actions/setup-go@v2
+          with:
+            go-version: '1.18'
+    
+        - name: Install dependencies
+          run: |
+            go mod init test
+            go mod tidy
+    
+        - name: Set up Terraform
+          uses: hashicorp/setup-terraform@v1
+    
+        - name: Terraform Init
+          run: terraform init
+          env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '1.18'
-
-      - name: Install Terratest dependencies
-        run: |
-          cd test
-          if [ -f "go.mod" ];then rm -f go.mod go.sum; fi
-          go mod init terratest
-          go mod tidy
-          go get -v github.com/gruntwork-io/terratest/modules/terraform
-          go get -v github.com/stretchr/testify
-          go get -v github.com/gruntwork-io/terratest/modules/http-helper
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.0.11
-
-      - name: Terraform Init and Apply
-        working-directory: ./terraform
-        run: terraform init && terraform apply -auto-approve
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Run Terratest
-        working-directory: ./test
-        run: go test -v -timeout 30m
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Terraform Destroy Specific Resources
-        if: always()
-        working-directory: ./terraform
-        run: terraform destroy -auto-approve -target=aws_s3_bucket_website_configuration.website -target=aws_s3_bucket.website_bucket
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        - name: Run Terratest
+          working-directory: ./test
+          run: go test -v
+          env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
