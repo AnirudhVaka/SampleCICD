@@ -29,17 +29,9 @@ func TestS3BucketExistence(t *testing.T) {
 	// Apply Terraform code
 	terraform.InitAndApply(t, terraformOptions)
 
-	// Verify if the S3 bucket exists by listing all S3 buckets
+	// Verify if the S3 bucket exists
 	bucketName := "samplewebsitebucket" // replace with your bucket name
-	buckets := aws.ListS3Buckets(t, awsRegion)
-
-	bucketExists := false
-	for _, bucket := range buckets {
-		if bucket == bucketName {
-			bucketExists = true
-			break
-		}
-	}
-
+	bucketExists, err := aws.DoesS3BucketExistE(t, awsRegion, bucketName)
+	assert.NoError(t, err)
 	assert.True(t, bucketExists, "The S3 bucket should exist")
 }
