@@ -12,12 +12,12 @@ func TestS3BucketExistence(t *testing.T) {
 	t.Parallel()
 
 	// AWS Region
-	awsRegion := "us-west-2" // replace with your region
+	awsRegion := "ap-south-1" // replace with your region
 
 	// Terraform options to configure the Terraform apply
 	terraformOptions := &terraform.Options{
 		// Set the path to the Terraform code
-		TerraformDir: "../", // Update this path if necessary
+		TerraformDir: "../terraform", // Update this path if necessary
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
 		},
