@@ -1,15 +1,21 @@
-# Check if the S3 bucket exists
+# Step 1: Check if the S3 bucket exists
 data "aws_s3_bucket" "existing" {
-  bucket = "samplewebsitebucket"
+  bucket = "samplewebsitebucket"  # Replace with your bucket name
 }
 
-# Conditionally create the bucket if it does not exist
+# Step 2: Conditionally create the bucket if it does not exist
 resource "aws_s3_bucket" "website_bucket" {
   count  = data.aws_s3_bucket.existing.id != "" ? 0 : 1
   bucket = "samplewebsitebucket"
+
+  # Website configuration if the bucket is newly created
+  website {
+    index_document = "index.html"
+    error_document = "error.html"
+  }
 }
 
-# Configure the bucket as a website if it's created by Terraform
+# Step 3: Apply a website configuration if the bucket is created by Terraform
 resource "aws_s3_bucket_website_configuration" "website" {
   count  = length(aws_s3_bucket.website_bucket) > 0 ? 1 : 0
   bucket = aws_s3_bucket.website_bucket[0].id
@@ -23,9 +29,12 @@ resource "aws_s3_bucket_website_configuration" "website" {
   }
 }
 
-# Disable block public access to allow public policies
+# Step 4: Disable Block Public Access to allow public bucket policies
 resource "aws_s3_bucket_public_access_block" "public_access" {
-  bucket = coalesce(try(data.aws_s3_bucket.existing.id, null), try(aws_s3_bucket.website_bucket[0].id, null))
+  bucket = coalesce(
+    try(data.aws_s3_bucket.existing.id, null),
+    try(aws_s3_bucket.website_bucket[0].id, null)
+  )
 
   block_public_acls       = false
   block_public_policy     = false
@@ -33,9 +42,12 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
   restrict_public_buckets = false
 }
 
-# Apply a bucket policy to allow public read access
+# Step 5: Apply a bucket policy to allow public read access to objects
 resource "aws_s3_bucket_policy" "website_policy" {
-  bucket = coalesce(try(data.aws_s3_bucket.existing.id, null), try(aws_s3_bucket.website_bucket[0].id, null))
+  bucket = coalesce(
+    try(data.aws_s3_bucket.existing.id, null),
+    try(aws_s3_bucket.website_bucket[0].id, null)
+  )
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -50,6 +62,7 @@ resource "aws_s3_bucket_policy" "website_policy" {
   })
 }
 
+# Output the S3 website URL, depending on whether the bucket is pre-existing or newly created
 output "website_url" {
   value       = coalesce(data.aws_s3_bucket.existing.website_endpoint, try(aws_s3_bucket.website_bucket[0].website_endpoint, null))
   description = "The URL of the static website hosted on S3"
