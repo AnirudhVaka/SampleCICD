@@ -14,7 +14,7 @@ func TestS3BucketWebsiteConfig(t *testing.T) {
 
     terraformOptions := &terraform.Options{
         // Path to your Terraform directory
-        TerraformDir: "../",
+        TerraformDir: "../terraform",
     }
 
     // Ensure Terraform destroy is run after tests to clean up resources
@@ -39,7 +39,7 @@ func TestS3BucketPublicAccess(t *testing.T) {
     t.Parallel()
 
     terraformOptions := &terraform.Options{
-        TerraformDir: "../",
+        TerraformDir: "../terraform",
     }
 
     // Ensure resources are cleaned up after test completion
@@ -58,7 +58,7 @@ func TestWebsiteEndpoint(t *testing.T) {
     t.Parallel()
 
     terraformOptions := &terraform.Options{
-        TerraformDir: "../",
+        TerraformDir: "../terraform",
     }
 
     defer terraform.Destroy(t, terraformOptions)
@@ -79,7 +79,7 @@ func TestWebsiteEndpoint(t *testing.T) {
 // TestCleanup verifies the cleanup process works correctly
 func TestCleanup(t *testing.T) {
     terraformOptions := &terraform.Options{
-        TerraformDir: "../",
+        TerraformDir: "../terraform	",
     }
 
     // Apply the configuration
