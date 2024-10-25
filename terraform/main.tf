@@ -1,15 +1,12 @@
-# Conditional creation of S3 bucket as described earlier
-
-# Data source to check if the bucket exists
-data "aws_s3_bucket" "existing_bucket" {
-  bucket = "samplewebvaultbucket"
-  count  = length(try(aws_s3_bucket.website_bucket.id, [])) == 0 ? 0 : 1
+# Local variable to control bucket creation
+locals {
+  create_bucket = true  # Set to false if you don't want to create the bucket
 }
 
-# Conditionally create the bucket if it does not already exist
+# Conditionally create the S3 bucket
 resource "aws_s3_bucket" "website_bucket" {
+  count  = local.create_bucket ? 1 : 0
   bucket = "samplewebvaultbucket"
-  count = length(data.aws_s3_bucket.existing_bucket) == 0 ? 1 : 0
 
   website {
     index_document = "index.html"
@@ -17,8 +14,9 @@ resource "aws_s3_bucket" "website_bucket" {
   }
 }
 
-# Bucket policy for public access
+# Apply a bucket policy for public access
 resource "aws_s3_bucket_policy" "website_policy" {
+  count  = local.create_bucket ? 1 : 0
   bucket = aws_s3_bucket.website_bucket[0].id
 
   policy = jsonencode({
@@ -32,10 +30,10 @@ resource "aws_s3_bucket_policy" "website_policy" {
       }
     ]
   })
-  count = length(data.aws_s3_bucket.existing_bucket) == 0 ? 1 : 0
 }
 
 output "website_url" {
-  value = aws_s3_bucket.website_bucket[0].website_endpoint
-  depends_on = [aws_s3_bucket.website_bucket]
+  value       = aws_s3_bucket.website_bucket[0].website_endpoint
+  description = "The URL of the static website hosted on S3"
+  depends_on  = [aws_s3_bucket.website_bucket]
 }
