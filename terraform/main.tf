@@ -1,22 +1,31 @@
-# Step 1: Data source to check if the bucket exists
+# Step 1: Check if the S3 bucket exists
 data "aws_s3_bucket" "existing" {
   bucket = "samplewebsitebucket"  # Replace with your bucket name
 }
 
-# Step 2: Conditionally create the bucket if it doesn’t exist
+# Step 2: Conditionally create the bucket if it does not exist
 resource "aws_s3_bucket" "website_bucket" {
   count  = data.aws_s3_bucket.existing.id != "" ? 0 : 1
   bucket = "samplewebsitebucket"
+}
 
-  website {
-    index_document = "index.html"
-    error_document = "error.html"
+# Step 3: Configure the bucket as a website if it's created by Terraform
+resource "aws_s3_bucket_website_configuration" "website" {
+  count  = length(aws_s3_bucket.website_bucket) > 0 ? 1 : 0
+  bucket = aws_s3_bucket.website_bucket[0].id
+
+  index_document {
+    suffix = "index.html"
+  }
+
+  error_document {
+    key = "error.html"
   }
 }
 
-# Step 3: Apply a bucket policy to allow public read access (skip if it already exists)
+# Step 4: Apply a bucket policy to allow public read access
 resource "aws_s3_bucket_policy" "website_policy" {
-  bucket = coalesce(try(data.aws_s3_bucket.existing.id, null), aws_s3_bucket.website_bucket[0].id)
+  bucket = coalesce(try(data.aws_s3_bucket.existing.id, null), try(aws_s3_bucket.website_bucket[0].id, null))
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -29,12 +38,9 @@ resource "aws_s3_bucket_policy" "website_policy" {
       }
     ]
   })
-  
-  # Only apply the policy if the bucket was created by Terraform or if it lacks this policy
-  count = data.aws_s3_bucket.existing.id != "" ? 1 : 0
 }
 
 output "website_url" {
-  value       = coalesce(data.aws_s3_bucket.existing.website_endpoint, aws_s3_bucket.website_bucket[0].website_endpoint)
+  value       = coalesce(data.aws_s3_bucket.existing.website_endpoint, try(aws_s3_bucket.website_bucket[0].website_endpoint, null))
   description = "The URL of the static website hosted on S3"
 }
