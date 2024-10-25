@@ -3,7 +3,9 @@ package test
 import (
 	"testing"
 
-	"github.com/gruntwork-io/terratest/modules/aws"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,9 +31,19 @@ func TestS3BucketExistence(t *testing.T) {
 	// Apply Terraform code
 	terraform.InitAndApply(t, terraformOptions)
 
-	// Verify if the S3 bucket exists
+	// Check if the S3 bucket exists using AWS SDK
 	bucketName := "samplewebsitebucket" // replace with your bucket name
-	bucketExists, err := aws.DoesS3BucketExistE(t, awsRegion, bucketName)
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(awsRegion)},
+	)
 	assert.NoError(t, err)
+
+	s3Client := s3.New(sess)
+	_, err = s3Client.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(bucketName),
+	})
+
+	// If err is nil, the bucket exists; otherwise, it does not
+	bucketExists := err == nil
 	assert.True(t, bucketExists, "The S3 bucket should exist")
 }
