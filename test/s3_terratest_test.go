@@ -26,7 +26,7 @@ func TestS3Bucket(t *testing.T) {
     bucketName := terraform.Output(t, terraformOptions, "website_url")
 
     // Initialize an AWS session
-    awsRegion := "us-east-1" // specify your region
+    awsRegion := "ap-south-1" // specify your region
     sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(awsRegion)}))
     s3Client := s3.New(sess)
 
