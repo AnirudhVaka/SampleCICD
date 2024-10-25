@@ -25,7 +25,10 @@ jobs:
       - name: Install Terratest dependencies
         run: |
           cd test
-          go mod init terratest
+          if [ ! -f "go.mod" ]; then
+            go mod init terratest
+          fi
+          go mod tidy
           go get -v github.com/gruntwork-io/terratest/modules/terraform
           go get -v github.com/stretchr/testify
           go get -v github.com/gruntwork-io/terratest/modules/http-helper
