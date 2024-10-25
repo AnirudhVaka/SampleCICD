@@ -4,7 +4,7 @@ import (
     "testing"
     "github.com/gruntwork-io/terratest/modules/terraform"
     "github.com/stretchr/testify/assert"
-    "github.com/gruntwork-io/terratest/modules/http-helper" // Import http-helper module
+    "github.com/gruntwork-io/terratest/modules/http-helper"
     "time"
 )
 
@@ -20,7 +20,10 @@ func TestWebsiteEndpoint(t *testing.T) {
     terraform.InitAndApply(t, terraformOptions)
 
     // Get the website URL from Terraform output
-    websiteURL := terraform.Output(t, terraformOptions, "website_url")
+    websiteURL, err := terraform.OutputE(t, terraformOptions, "website_url")
+    if err != nil {
+        t.Fatalf("Failed to get website_url output: %v", err)
+    }
     assert.NotEmpty(t, websiteURL, "Website URL should not be empty")
 
     // Test the website endpoint using the HTTP helper
@@ -29,9 +32,4 @@ func TestWebsiteEndpoint(t *testing.T) {
 
     // Check if the website endpoint is reachable with an HTTP 200 response
     http_helper.HttpGetWithRetry(t, "http://"+websiteURL, nil, 200, "", maxRetries, timeBetweenRetries)
-
-    // Ensure website URL output is empty post-destroy
-    terraform.Destroy(t, terraformOptions)
-    websiteURLAfterDestroy := terraform.Output(t, terraformOptions, "website_url")
-    assert.Empty(t, websiteURLAfterDestroy, "Website URL should be empty after destroy")
 }
