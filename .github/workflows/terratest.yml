@@ -30,8 +30,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
     
-      - name: Install dependencies
-        run: go mod tidy  # Ensure `go.mod` exists in the `test` directory
+      - name: Initialize Go Module
+        working-directory: ./test  # Ensure this matches the location of your test files
+        run: |
+          go mod init test || true  # Initialize the module if `go.mod` is missing
+          go mod tidy
     
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
@@ -44,7 +47,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Run Terratest
-        working-directory: ./test  # Adjust this path if your tests are located elsewhere
+        working-directory: ./test  # Ensure this matches the test directory path
         run: go test -v
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
