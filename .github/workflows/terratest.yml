@@ -22,7 +22,7 @@ jobs:
         with:
           go-version: '1.18'
 
-      - name: Initialize Go Module and Install Dependencies
+      - name: Install Terratest dependencies
         run: |
           cd test
           if [ -f "go.mod" ]; then

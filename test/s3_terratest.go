@@ -1,11 +1,11 @@
-// test/s3_terratest.go
 package test
 
 import (
     "testing"
-    "strings"
     "github.com/gruntwork-io/terratest/modules/terraform"
     "github.com/stretchr/testify/assert"
+    "github.com/gruntwork-io/terratest/modules/http-helper" // Import http-helper module
+    "time"
 )
 
 // TestS3BucketWebsiteConfig verifies that the S3 bucket has been set up correctly with website hosting
@@ -13,11 +13,11 @@ func TestS3BucketWebsiteConfig(t *testing.T) {
     t.Parallel()
 
     terraformOptions := &terraform.Options{
-        // Path to where your Terraform code is located
+        // Path to your Terraform directory
         TerraformDir: "../",
     }
 
-    // Clean up resources with terraform destroy at the end of the test
+    // Ensure Terraform destroy is run after tests to clean up resources
     defer terraform.Destroy(t, terraformOptions)
 
     // Run terraform init and apply
@@ -30,7 +30,8 @@ func TestS3BucketWebsiteConfig(t *testing.T) {
     // Check that the website endpoint is correctly formatted
     websiteURL := terraform.Output(t, terraformOptions, "website_url")
     assert.NotEmpty(t, websiteURL, "Website URL should not be empty")
-    assert.True(t, strings.Contains(websiteURL, "s3-website"), "Website URL should contain 's3-website'")
+    assert.True(t, websiteURL != "", "Website URL should not be empty")
+    assert.Contains(t, websiteURL, "s3-website", "Website URL should contain 's3-website'")
 }
 
 // TestS3BucketPublicAccess checks if the public access policy is properly configured
@@ -66,11 +67,13 @@ func TestWebsiteEndpoint(t *testing.T) {
 
     // Get the website URL from Terraform output
     websiteURL := terraform.Output(t, terraformOptions, "website_url")
-    response, err := http_helper.HttpGet(t, "http://" + websiteURL, nil)
 
-    // Verify we can reach the website endpoint and get a 200 status
-    assert.NoError(t, err, "Should be able to reach the website URL")
-    assert.Equal(t, 200, response.StatusCode, "Expected status code 200")
+    // Test the website endpoint using the HTTP helper
+    maxRetries := 10
+    timeBetweenRetries := 10 * time.Second
+
+    // Use http_helper to test if the website is serving the expected content
+    http_helper.HttpGetWithRetry(t, "http://"+websiteURL, nil, 200, "index.html", maxRetries, timeBetweenRetries)
 }
 
 // TestCleanup verifies the cleanup process works correctly
