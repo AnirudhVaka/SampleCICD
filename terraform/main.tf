@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "ap-south-1"
-}
-
 # Step 1: Check if the S3 bucket exists
 data "aws_s3_bucket" "existing" {
   bucket = "samplewebsitebucket"
