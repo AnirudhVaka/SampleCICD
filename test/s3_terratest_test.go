@@ -17,10 +17,8 @@ func TestS3BucketWebsiteConfig(t *testing.T) {
         TerraformDir: "../terraform",
     }
 
-    // Ensure Terraform destroy is run after tests to clean up resources
+    // Run terraform init and apply, ensure Terraform destroy is run after tests to clean up resources
     defer terraform.Destroy(t, terraformOptions)
-
-    // Run terraform init and apply
     terraform.InitAndApply(t, terraformOptions)
 
     // Verify the bucket name is as expected
@@ -30,8 +28,12 @@ func TestS3BucketWebsiteConfig(t *testing.T) {
     // Check that the website endpoint is correctly formatted
     websiteURL := terraform.Output(t, terraformOptions, "website_url")
     assert.NotEmpty(t, websiteURL, "Website URL should not be empty")
-    assert.True(t, websiteURL != "", "Website URL should not be empty")
     assert.Contains(t, websiteURL, "s3-website", "Website URL should contain 's3-website'")
+
+    // After destroy, website URL should no longer exist
+    terraform.Destroy(t, terraformOptions)
+    websiteURLAfterDestroy := terraform.Output(t, terraformOptions, "website_url")
+    assert.Empty(t, websiteURLAfterDestroy, "Website URL should be empty after destroy")
 }
 
 // TestS3BucketPublicAccess checks if the public access policy is properly configured
@@ -44,13 +46,17 @@ func TestS3BucketPublicAccess(t *testing.T) {
 
     // Ensure resources are cleaned up after test completion
     defer terraform.Destroy(t, terraformOptions)
-
     terraform.InitAndApply(t, terraformOptions)
 
     // Retrieve and verify the bucket policy
     bucketPolicy := terraform.Output(t, terraformOptions, "bucket_policy")
     assert.Contains(t, bucketPolicy, `"Effect": "Allow"`, "Bucket policy should allow public access")
     assert.Contains(t, bucketPolicy, `"Principal": "*"`, "Bucket policy should allow public access for everyone")
+
+    // After destroy, check if bucket policy output is empty or null
+    terraform.Destroy(t, terraformOptions)
+    bucketPolicyAfterDestroy := terraform.Output(t, terraformOptions, "bucket_policy")
+    assert.Empty(t, bucketPolicyAfterDestroy, "Bucket policy should be empty after destroy")
 }
 
 // TestWebsiteEndpoint verifies that the S3 website URL returns the expected content (index.html)
@@ -62,11 +68,11 @@ func TestWebsiteEndpoint(t *testing.T) {
     }
 
     defer terraform.Destroy(t, terraformOptions)
-
     terraform.InitAndApply(t, terraformOptions)
 
     // Get the website URL from Terraform output
     websiteURL := terraform.Output(t, terraformOptions, "website_url")
+    assert.NotEmpty(t, websiteURL, "Website URL should not be empty")
 
     // Test the website endpoint using the HTTP helper
     maxRetries := 10
@@ -74,12 +80,17 @@ func TestWebsiteEndpoint(t *testing.T) {
 
     // Use http_helper to test if the website is serving the expected content
     http_helper.HttpGetWithRetry(t, "http://"+websiteURL, nil, 200, "index.html", maxRetries, timeBetweenRetries)
+
+    // After destroy, the website should no longer be available
+    terraform.Destroy(t, terraformOptions)
+    websiteURLAfterDestroy := terraform.Output(t, terraformOptions, "website_url")
+    assert.Empty(t, websiteURLAfterDestroy, "Website URL should be empty after destroy")
 }
 
 // TestCleanup verifies the cleanup process works correctly
 func TestCleanup(t *testing.T) {
     terraformOptions := &terraform.Options{
-        TerraformDir: "../terraform	",
+        TerraformDir: "../terraform",
     }
 
     // Apply the configuration
