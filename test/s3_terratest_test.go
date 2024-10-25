@@ -1,45 +1,27 @@
 package test
 
 import (
-    "testing"
-    "github.com/gruntwork-io/terratest/modules/terraform"
-    "github.com/stretchr/testify/assert"
-    "github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/s3"
+	"testing"
+
+	"github.com/gruntwork-io/terratest/modules/aws"
+	"github.com/gruntwork-io/terratest/modules/terraform"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestS3Bucket(t *testing.T) {
-    t.Parallel()
+func TestS3BucketVersioning(t *testing.T) {
+	// Specify the Terraform options
+	terraformOptions := &terraform.Options{
+		// Path to the Terraform code
+		TerraformDir: "../terraform",
+	}
 
-    terraformOptions := &terraform.Options{
-        TerraformDir: "../terraform", // assuming main.tf is in the parent directory
-    }
+	// Apply and defer cleanup
+	defer terraform.Destroy(t, terraformOptions)
+	terraform.InitAndApply(t, terraformOptions)
 
-    // Clean up resources with `terraform destroy` at the end of the test
-    defer terraform.Destroy(t, terraformOptions)
-
-    // Run `terraform init` and `terraform apply`
-    terraform.InitAndApply(t, terraformOptions)
-
-    // Get the name of the S3 bucket from Terraform outputs
-    bucketName := terraform.Output(t, terraformOptions, "website_url")
-
-    // Initialize an AWS session
-    awsRegion := "ap-south-1" // specify your region
-    sess := session.Must(session.NewSession(&aws.Config{Region: aws.String(awsRegion)}))
-    s3Client := s3.New(sess)
-
-    // Verify if the bucket exists
-    _, err := s3Client.HeadBucket(&s3.HeadBucketInput{
-        Bucket: aws.String(bucketName),
-    })
-    assert.NoError(t, err)
-
-    // Check if public access is disabled for the bucket (basic check)
-    publicAccess, err := s3Client.GetBucketPolicyStatus(&s3.GetBucketPolicyStatusInput{
-        Bucket: aws.String(bucketName),
-    })
-    assert.NoError(t, err)
-    assert.NotNil(t, publicAccess)
+	// Check if the S3 bucket exists and has versioning enabled
+	bucketID := terraform.Output(t, terraformOptions, "bucket_id")
+	region := "ap-south-1"
+	isVersioningEnabled := aws.IsS3BucketVersioningEnabled(t, region, bucketID)
+	assert.True(t, isVersioningEnabled, "Bucket versioning should be enabled.")
 }
