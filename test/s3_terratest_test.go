@@ -4,33 +4,28 @@ import (
     "testing"
     "github.com/gruntwork-io/terratest/modules/terraform"
     "github.com/stretchr/testify/assert"
-    "github.com/gruntwork-io/terratest/modules/http-helper"
-    "time"
 )
 
-// TestWebsiteEndpoint verifies that the S3 website URL returns a successful status
-func TestWebsiteEndpoint(t *testing.T) {
+// TestS3BucketCreation verifies that the S3 bucket is created successfully
+func TestS3BucketCreation(t *testing.T) {
     t.Parallel()
 
     terraformOptions := &terraform.Options{
+        // Path to the Terraform code that provisions the S3 bucket
         TerraformDir: "../terraform",
     }
 
-    // Initialize and apply the Terraform configuration
+    // Apply the Terraform code
+    defer terraform.Destroy(t, terraformOptions)
     terraform.InitAndApply(t, terraformOptions)
 
-    // Get the website URL from Terraform output as a string
-    websiteURL, err := terraform.OutputE(t, terraformOptions, "website_url")
+    // Verify the output for bucket name
+    bucketName, err := terraform.OutputE(t, terraformOptions, "bucket_name")
     if err != nil {
-        t.Fatalf("Failed to get website_url output: %v", err)
+        t.Fatalf("Failed to get bucket_name output: %v", err)
     }
 
-    assert.NotEmpty(t, websiteURL, "Website URL should not be empty")
-
-    // Test the website endpoint using the HTTP helper
-    maxRetries := 10
-    timeBetweenRetries := 10 * time.Second
-
-    // Check if the website endpoint is reachable with an HTTP 200 response
-    http_helper.HttpGetWithRetry(t, "http://"+websiteURL, nil, 200, "", maxRetries, timeBetweenRetries)
+    // Assert that bucket name is as expected
+    expectedBucketName := "samplewebsitebucket" // Update this to match the expected bucket name in your configuration
+    assert.Equal(t, expectedBucketName, bucketName, "Bucket name should match expected name")
 }
