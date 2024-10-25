@@ -25,9 +25,7 @@ jobs:
       - name: Install Terratest dependencies
         run: |
           cd test
-          if [ -f "go.mod" ]; then
-            rm -f go.mod go.sum
-          fi
+          if [ -f "go.mod" ];then rm -f go.mod go.sum; fi
           go mod init terratest
           go mod tidy
           go get -v github.com/gruntwork-io/terratest/modules/terraform
@@ -53,3 +51,10 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      - name: Terraform Destroy Specific Resources
+        if: always()
+        working-directory: ./terraform
+        run: terraform destroy -auto-approve -target=aws_s3_bucket_website_configuration.website -target=aws_s3_bucket.website_bucket
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
