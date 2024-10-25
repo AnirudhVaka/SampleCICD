@@ -22,12 +22,14 @@ jobs:
         with:
           go-version: '1.18'
 
-      - name: Install Terratest dependencies
+      - name: Initialize Go Module and Install Dependencies
         run: |
           cd test
-          if [ ! -f "go.mod" ]; then
-            go mod init terratest
+          # Check if go.mod exists and remove it if corrupted, then initialize
+          if [ -f "go.mod" ]; then
+            rm -f go.mod go.sum
           fi
+          go mod init terratest
           go mod tidy
           go get -v github.com/gruntwork-io/terratest/modules/terraform
           go get -v github.com/stretchr/testify
