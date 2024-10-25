@@ -1,19 +1,21 @@
-provider "null" {}
+resource "aws_s3_bucket" "website_bucket" {
+  bucket = "samplewebvaultbucket"  # Replace with a unique name
+  acl    = "public-read"
 
-resource "null_resource" "provision_self_hosted_server" {
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt-get update",
-      "sudo apt-get install -y nginx"
-    ]
-
-    connection {
-      type        = "ssh"
-      host        = "103.174.226.90"
-      user        = "root"   # You can replace 'root' with your server's username
-      password    = "8JL6HzP*KIvf"
-      port        = 22
-      timeout     = "2m"
-    }
+  website {
+    index_document = "index.html"
+    error_document = "error.html"
   }
+}
+
+resource "aws_s3_bucket_object" "index" {
+  bucket = aws_s3_bucket.website_bucket.bucket
+  key    = "index.html"
+  source = "${path.module}/../website/index.html"
+  acl    = "public-read"
+  content_type = "text/html"
+}
+
+output "website_url" {
+  value = aws_s3_bucket.website_bucket.website_endpoint
 }
