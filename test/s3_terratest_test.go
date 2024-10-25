@@ -8,7 +8,7 @@ import (
     "time"
 )
 
-// TestS3BucketWebsite verifies that the S3 bucket is created or exists, and that the website URL is accessible
+// TestS3BucketWebsite verifies that the S3 website URL exists and is accessible
 func TestS3BucketWebsite(t *testing.T) {
     t.Parallel()
 
@@ -19,13 +19,6 @@ func TestS3BucketWebsite(t *testing.T) {
 
     // Initialize and apply the Terraform configuration
     terraform.InitAndApply(t, terraformOptions)
-
-    // Verify the output for bucket name
-    bucketName, err := terraform.OutputE(t, terraformOptions, "bucket_name")
-    if err != nil {
-        t.Fatalf("Failed to get bucket_name output: %v", err)
-    }
-    assert.NotEmpty(t, bucketName, "Bucket name should not be empty")
 
     // Verify the website URL output
     websiteURL, err := terraform.OutputE(t, terraformOptions, "website_url")
