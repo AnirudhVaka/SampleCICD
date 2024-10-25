@@ -8,10 +8,6 @@ resource "aws_s3_bucket" "website_bucket" {
   count  = data.aws_s3_bucket.existing.id != "" ? 0 : 1
   bucket = "samplewebsitebucket"
 
-  # Lifecycle rule to prevent deletion
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 # Step 3: Apply a website configuration if the bucket is created by Terraform
@@ -40,10 +36,6 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
   ignore_public_acls      = false
   restrict_public_buckets = false
 
-  # Lifecycle rule to prevent deletion
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 # Step 5: Apply a bucket policy to allow public read access to objects
@@ -65,10 +57,6 @@ resource "aws_s3_bucket_policy" "website_policy" {
     ]
   })
 
-  # Lifecycle rule to prevent deletion
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 # Output the S3 website URL, depending on whether the bucket is pre-existing or newly created
