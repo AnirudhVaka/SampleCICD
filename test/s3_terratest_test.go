@@ -4,10 +4,12 @@ import (
     "testing"
     "github.com/gruntwork-io/terratest/modules/terraform"
     "github.com/stretchr/testify/assert"
+    "github.com/gruntwork-io/terratest/modules/http-helper"
+    "time"
 )
 
-// TestS3BucketCreation verifies that the S3 bucket is created successfully and checks its existence
-func TestS3BucketCreation(t *testing.T) {
+// TestS3BucketWebsite verifies that the S3 bucket is created or exists, and that the website URL is accessible
+func TestS3BucketWebsite(t *testing.T) {
     t.Parallel()
 
     terraformOptions := &terraform.Options{
@@ -23,8 +25,19 @@ func TestS3BucketCreation(t *testing.T) {
     if err != nil {
         t.Fatalf("Failed to get bucket_name output: %v", err)
     }
+    assert.NotEmpty(t, bucketName, "Bucket name should not be empty")
 
-    // Assert that bucket name is as expected
-    expectedBucketName := "samplewebsitebucket" // Update this to match the expected bucket name in your configuration
-    assert.Equal(t, expectedBucketName, bucketName, "Bucket name should match expected name")
+    // Verify the website URL output
+    websiteURL, err := terraform.OutputE(t, terraformOptions, "website_url")
+    if err != nil {
+        t.Fatalf("Failed to get website_url output: %v", err)
+    }
+    assert.NotEmpty(t, websiteURL, "Website URL should not be empty")
+
+    // Test the website endpoint using the HTTP helper if a website URL is provided
+    if websiteURL != "" {
+        maxRetries := 10
+        timeBetweenRetries := 10 * time.Second
+        http_helper.HttpGetWithRetry(t, "http://"+websiteURL, nil, 200, "", maxRetries, timeBetweenRetries)
+    }
 }
