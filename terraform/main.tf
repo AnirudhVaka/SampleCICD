@@ -5,7 +5,7 @@ data "aws_s3_bucket" "existing" {
 
 # Step 2: Conditionally create the bucket if it does not exist
 resource "aws_s3_bucket" "website_bucket" {
-  count  = length(data.aws_s3_bucket.existing.id) > 0 ? 0 : 1
+  count  = data.aws_s3_bucket.existing.id != "" ? 0 : 1
   bucket = "samplewebsitebucket"
 
   # Lifecycle rule to prevent deletion
