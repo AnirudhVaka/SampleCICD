@@ -28,15 +28,16 @@ jobs:
           go mod init terratest
           go get -v github.com/gruntwork-io/terratest/modules/terraform
           go get -v github.com/stretchr/testify
+          go get -v github.com/gruntwork-io/terratest/modules/http-helper
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.0.11
 
-      - name: Terraform Init and Plan
+      - name: Terraform Init and Apply
         working-directory: ./
-        run: terraform init -input=false
+        run: terraform init && terraform apply -auto-approve
 
       - name: Run Terratest
         working-directory: ./test
