@@ -17,7 +17,7 @@ func TestWebsiteEndpoint(t *testing.T) {
         TerraformDir: "../terraform",
     }
 
-    defer terraform.Destroy(t, terraformOptions)
+    // Initialize and apply the Terraform configuration
     terraform.InitAndApply(t, terraformOptions)
 
     // Get the website URL from Terraform output in JSON format
