@@ -44,7 +44,7 @@ jobs:
       # New step to upload index.html file to the S3 bucket
       - name: Upload index.html to S3
         run: |
-          aws s3 cp ./website/index.html s3://samplewebvaultbucket/index.html --acl public-read
+          aws s3 cp ./Website/index.html s3://samplewebvaultbucket/index.html --acl public-read
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
