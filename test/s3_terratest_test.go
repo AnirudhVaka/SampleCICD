@@ -13,7 +13,7 @@ func TestS3Bucket(t *testing.T) {
     t.Parallel()
 
     terraformOptions := &terraform.Options{
-        TerraformDir: "../test", // assuming main.tf is in the parent directory
+        TerraformDir: "../terraform", // assuming main.tf is in the parent directory
     }
 
     // Clean up resources with `terraform destroy` at the end of the test
