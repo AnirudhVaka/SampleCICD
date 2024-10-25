@@ -1,15 +1,15 @@
-# Step 1: Check if the S3 bucket exists
+# Check if the S3 bucket exists
 data "aws_s3_bucket" "existing" {
-  bucket = "samplewebsitebucket"  # Replace with your bucket name
+  bucket = "samplewebsitebucket"
 }
 
-# Step 2: Conditionally create the bucket if it does not exist
+# Conditionally create the bucket if it does not exist
 resource "aws_s3_bucket" "website_bucket" {
   count  = data.aws_s3_bucket.existing.id != "" ? 0 : 1
   bucket = "samplewebsitebucket"
 }
 
-# Step 3: Configure the bucket as a website if it's created by Terraform
+# Configure the bucket as a website if it's created by Terraform
 resource "aws_s3_bucket_website_configuration" "website" {
   count  = length(aws_s3_bucket.website_bucket) > 0 ? 1 : 0
   bucket = aws_s3_bucket.website_bucket[0].id
@@ -23,7 +23,17 @@ resource "aws_s3_bucket_website_configuration" "website" {
   }
 }
 
-# Step 4: Apply a bucket policy to allow public read access
+# Disable block public access to allow public policies
+resource "aws_s3_bucket_public_access_block" "public_access" {
+  bucket = coalesce(try(data.aws_s3_bucket.existing.id, null), try(aws_s3_bucket.website_bucket[0].id, null))
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+# Apply a bucket policy to allow public read access
 resource "aws_s3_bucket_policy" "website_policy" {
   bucket = coalesce(try(data.aws_s3_bucket.existing.id, null), try(aws_s3_bucket.website_bucket[0].id, null))
 
