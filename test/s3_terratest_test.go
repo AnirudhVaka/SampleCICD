@@ -1,6 +1,7 @@
 package test
 
 import (
+    "encoding/json"
     "testing"
     "github.com/gruntwork-io/terratest/modules/terraform"
     "github.com/stretchr/testify/assert"
@@ -19,11 +20,18 @@ func TestWebsiteEndpoint(t *testing.T) {
     defer terraform.Destroy(t, terraformOptions)
     terraform.InitAndApply(t, terraformOptions)
 
-    // Get the website URL from Terraform output
-    websiteURL, err := terraform.OutputE(t, terraformOptions, "website_url")
+    // Get the website URL from Terraform output in JSON format
+    outputJson, err := terraform.OutputJsonE(t, terraformOptions, "website_url")
     if err != nil {
         t.Fatalf("Failed to get website_url output: %v", err)
     }
+
+    // Unmarshal JSON to extract URL as a string
+    var websiteURL string
+    if err := json.Unmarshal([]byte(outputJson), &websiteURL); err != nil {
+        t.Fatalf("Failed to parse website_url output: %v", err)
+    }
+
     assert.NotEmpty(t, websiteURL, "Website URL should not be empty")
 
     // Test the website endpoint using the HTTP helper
