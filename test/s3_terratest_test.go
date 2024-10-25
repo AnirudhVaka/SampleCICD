@@ -1,6 +1,8 @@
 package test
 
 import (
+	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -10,16 +12,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestS3BucketExistence(t *testing.T) {
+func TestS3WebsiteHttpAccess(t *testing.T) {
 	t.Parallel()
 
-	// AWS Region
-	awsRegion := "ap-south-1" // replace with your region
+	awsRegion := "ap-south-1"
+	bucketName := "samplewebsitebucket"
 
-	// Terraform options to configure the Terraform apply
+	// Terraform options for applying configuration
 	terraformOptions := &terraform.Options{
-		// Set the path to the Terraform code
-		TerraformDir: "../terraform", // Update this path if necessary
+		TerraformDir: "../terraform",
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": awsRegion,
 		},
@@ -31,19 +32,26 @@ func TestS3BucketExistence(t *testing.T) {
 	// Apply Terraform code
 	terraform.InitAndApply(t, terraformOptions)
 
-	// Check if the S3 bucket exists using AWS SDK
-	bucketName := "samplewebsitebucket" // replace with your bucket name
+	// Set up AWS session
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(awsRegion)},
-	)
+		Region: aws.String(awsRegion),
+	})
 	assert.NoError(t, err)
 
+	// Verify the bucket is configured as a website
 	s3Client := s3.New(sess)
-	_, err = s3Client.HeadBucket(&s3.HeadBucketInput{
+	_, err = s3Client.GetBucketWebsite(&s3.GetBucketWebsiteInput{
 		Bucket: aws.String(bucketName),
 	})
+	assert.NoError(t, err, "The S3 bucket should be configured as a website")
 
-	// If err is nil, the bucket exists; otherwise, it does not
-	bucketExists := err == nil
-	assert.True(t, bucketExists, "The S3 bucket should exist")
+	// Construct the website URL
+	websiteURL := fmt.Sprintf("http://%s.s3-website-%s.amazonaws.com", bucketName, awsRegion)
+
+	// Make an HTTP GET request to the website URL
+	resp, err := http.Get(websiteURL)
+	assert.NoError(t, err, "HTTP request to the S3 website should not error")
+
+	// Check that the response status is 200 OK
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected HTTP status 200 OK for the S3 website")
 }
