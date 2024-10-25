@@ -6,7 +6,7 @@ import (
     "github.com/stretchr/testify/assert"
 )
 
-// TestS3BucketCreation verifies that the S3 bucket is created successfully
+// TestS3BucketCreation verifies that the S3 bucket is created successfully and checks its existence
 func TestS3BucketCreation(t *testing.T) {
     t.Parallel()
 
@@ -15,8 +15,7 @@ func TestS3BucketCreation(t *testing.T) {
         TerraformDir: "../terraform",
     }
 
-    // Apply the Terraform code
-    defer terraform.Destroy(t, terraformOptions)
+    // Initialize and apply the Terraform configuration
     terraform.InitAndApply(t, terraformOptions)
 
     // Verify the output for bucket name
